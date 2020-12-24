@@ -510,6 +510,6 @@ if __name__ == '__main__':
 	
 	drop_tables('ljqs')	
 	#get_basic()
-	
+	get_all_vol_change()
 	#get_ljqs_year()
 	get_ljqs_year()
