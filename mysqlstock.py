@@ -400,7 +400,7 @@ def get_ljqs_year(year='2020'):
 	cal_date=get_cal_date(year)
 	cursor=get_cursor()
 	if not is_exists_tab('ljqs'):
-		sql='''CREATE TABLE  IF NOT EXISTS ljqs_(
+		sql='''CREATE TABLE  IF NOT EXISTS ljqs(
 		id smallint unsigned not null auto_increment,
 		trade_date char(8) not null,
 		basic_id int not null references basic(id) ,

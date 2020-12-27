@@ -338,7 +338,7 @@ def get_all_vol_change():
 		year=str(y)
 		table_name1='vol_'+year
 		if  not table_name1 in get_tables():
-			df_vol=get_vol(year)
+			df_vol=get_col(year,'vol')
 			df_vol.to_sql(table_name1,conn,if_exists='replace',index=False)
 			print(df_vol)
 		else:
@@ -499,17 +499,59 @@ def save_today_all():
 			df.drop_duplicates(['code','trade_date','name'],inplace=True)
 			df.to_sql('ts_daily_all',conn,if_exists="append")
 	
+def create_daily_tmp():
+	sql='''
+	create table daily_tmp as
+	select * from daily 
+	where trade_date in'%s' and change>0;
+	'''%lastdays()
+	df = pd.read_sql(sql, conn)
+def pg_get_ljqs():	
+	sql='''
+begin;
+drop table if exists daily_tmp;
+drop table if exists daily_tmp_1;
+drop table if exists daily_tmp_2;
+drop table if exists daily_tmp_3;
+drop table if exists today_ljqs;
+create or replace function f_get_day(day date) 
+returns setof int 
+as 
+$$
+select CURRENT_DATE - day;
+$$
+language 'sql';
+select * from f_get_day('20201212'::date);
+select max(trade_date),min(trade_date) from daily;
 
+create table daily_tmp as 
+   select *  from daily 
+       where change >0 and 
+trade_date in(select   trade_date from daily group by trade_date order by trade_date desc limit 4)
+;
+
+create table today_ljqs as 
+(select  distinct a.ts_code,c.trade_date
+     from daily_tmp as a ,daily_tmp as b ,daily_tmp as c
+     where 
+      a.ts_code= b.ts_code and  a.ts_code=c.ts_code and b.ts_code=c.ts_code and 
+      a.trade_date::date =  (b.trade_date::date - '1 day'::INTERVAL)::date   and
+     a.trade_date::date = (c.trade_date::date - '2 day'::INTERVAL)::date    and 
+     a.vol<b.vol  and b.vol< c.vol
+);
+
+select * from ts_daily_all 
+where 
+trade_date=(select max(trade_date) from daily_tmp) and
+code in (select left(ts_code,6) from today_ljqs)
+;
+commit;
+	'''
+	cur=get_cursor()
+	result=cur.execute(sql)
 ###############
 if __name__ == '__main__':
 	save_today_all()
+	#get_daily()
 	have_daily()
-	#for y in range(1991,2021):
-	#        for d in get_cal_date(year=str(y)):
-	#	 	get_daily(date=d)
-	
-	drop_tables('ljqs')	
-	#get_basic()
-	get_all_vol_change()
-	#get_ljqs_year()
-	get_ljqs_year()
+	pg_get_ljqs()
