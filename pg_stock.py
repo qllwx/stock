@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 import psycopg2 
 import os 
 import matplotlib.pyplot as plt
+from   connect  import connect
 plt.close("all")
 
 year=date.today().strftime('%Y')
@@ -23,7 +24,7 @@ db=os.getenv("pg_db")
 
 
 
-connect_info = 'postgresql+psycopg2://'+user+':'+password+'@'+host+':5434/'+db # +'?charset=utf8'
+connect_info = 'postgresql+psycopg2://'+user+':'+password+'@'+host+':5432/'+db # +'?charset=utf8'
 engine = create_engine(connect_info) #use sqlalchemy to build link-engine
 conn=engine.connect()
 ts.set_token('626f578561a8ac48966a9fb33e7987e83750e57ee244f7f0309a9624')#设置token
@@ -31,6 +32,10 @@ pro = ts.pro_api()
 
 #connect=sqlite3.connect("stock.db")
 #cursor=connect.cursor()
+def get_engine():
+	connect_info = 'postgresql+psycopg2://'+user+':'+password+'@'+host+':5432/'+db # +'?charset=utf8'
+    engine = create_engine(connect_info) #use sqlalchemy to build link-engine
+	return engine
 
 def get_connect():
 	connect=psycopg2.connect(host=host,
@@ -92,6 +97,7 @@ def get_today():
 
 
 today=get_today()
+
 def   have_daily(date=today):
 	if not is_exists_tab('daily'):
 		print("没有每日股票信息表，添加中...")
@@ -113,6 +119,10 @@ def get_basic():
 		#sql="alter table basic add column id SERIAL ;"
 		#cursor.execute(sql)
 	
+def get_dailies():
+	for date in get_cal_date():
+		get_daily(date=date)
+
 def get_daily(date=today):
 	df=pro.daily(trade_date=date)
 	if df.empty:
@@ -224,7 +234,7 @@ def get_sina(ts_code='sh000001'):
 		img_save='./image/'+type+'/'+ts_code+'.gif'
 		urlretrieve(img_url, img_save)
 	
-def get_change(year='2020'):
+def get_change(year=year):
 	start_date=year+'0101'
 	end_date=year+'1231'
 	df = pro.query('trade_cal', start_date=start_date, end_date=end_date)
@@ -286,7 +296,7 @@ def drop_tables(strlike):
 	return tables
 	
 
-def get_cal_date(year='2020'):
+def get_cal_date(year=year):
 	start_date=year+'0101'
 	end_date=year+'1231'
 	df = pro.query('trade_cal', start_date=start_date, end_date=end_date)
@@ -521,7 +531,7 @@ $$
 select CURRENT_DATE - day;
 $$
 language 'sql';
-select * from f_get_day('20201212'::date);
+select * from f_get_day('2021212'::date);
 select max(trade_date),min(trade_date) from daily;
 
 create table daily_tmp as 
@@ -551,7 +561,8 @@ commit;
 	result=cur.execute(sql)
 ###############
 if __name__ == '__main__':
-	save_today_all()
+	get_dailies()
+	#save_today_all()
 	#get_daily()
-	have_daily()
-	pg_get_ljqs()
+	#have_daily()
+	#pg_get_ljqs()

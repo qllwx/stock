@@ -10,6 +10,16 @@ conn=sqlite3.connect("stock.db")
 cursor=conn.cursor()
 today=datetime.date.today().strftime('%Y%m%d') 
 
+
+def create_basic():
+	print("没有基础信息表，添加中...")
+	data = pro.query('stock_basic', exchange='', list_status='L', 
+		fields='ts_code,symbol,name,area,industry,fullname,enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs'
+		)
+	data.to_sql('basic'+today,conn,if_exists='replace')
+
+create_basic()
+
 reslut=conn.execute("SELECT * FROM basic").fetchall()
 if not reslut:
 	print("没有基础信息表，添加中...")

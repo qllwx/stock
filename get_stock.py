@@ -4,7 +4,7 @@ import sqlite3
 import tushare as ts 
 from datetime import date,timedelta
 from urllib.request import urlretrieve
-
+import connect
 os.makedirs('./image/',exist_ok=True)
 os.makedirs('./image/min/',exist_ok=True)
 os.makedirs('./image/daily',exist_ok=True)
@@ -25,6 +25,7 @@ df = pro.query('trade_cal', start_date='20200101', end_date=today)
 cal_date=list(df[df.is_open==1]['cal_date'])
 
 conn=sqlite3.connect("stock.db")
+#conn=connect.connect()
 cursor=conn.cursor()
 
 def lastdays(days=7):
